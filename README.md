@@ -71,11 +71,13 @@ Telemetry data must be compressed into as few bytes as possible.
 
 The system stores:
 
-* temperature,
-* radiation level,
-* battery percentage,
+* temperature, // Plage entre -40 et +70 on va dire. 7 bits
+* radiation level, // Entre 0 et 16. 5 bits
+* battery percentage, // Entre 0 et 100. 7 bits
+* actual speed, // Entre 0 et 1 400 (en orbite MEO) en pas de 10 km/h. 11 bits
 
 inside compact binary packets using manual bit packing techniques.
+Total necessary bits : 30.
 
 ⸻
 

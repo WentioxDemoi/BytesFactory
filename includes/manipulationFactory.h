@@ -24,6 +24,6 @@ bool getStatus(uint8_t *Status_, uint8_t Mask_);
 
 bool manipulationFactory(enum manipulationTC TC_, uint8_t *Status_, uint8_t Mask_);
 
-static void print_bits(uint8_t byte);
+void print_bits(uint32_t byte, int8_t nb_bytes_);
 
 #endif
