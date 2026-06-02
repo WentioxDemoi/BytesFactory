@@ -1,5 +1,5 @@
-#ifndef MANIPULATIONFACTORY_H
-#define MANIPULATIONFACTORY_H
+#ifndef FLAGSYSTEM_H
+#define FLAGSYSTEM_H
 
 #include <stdint.h>
 #include <stdbool.h>

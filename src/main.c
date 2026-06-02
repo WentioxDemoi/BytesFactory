@@ -1,7 +1,8 @@
 #include <stdio.h>
 #include <stdint.h>
-#include "../includes/manipulationFactory.h"
+#include "../includes/flagSystem.h"
 #include "../includes/bitPacking.h"
+#include "../includes/packetSystem.h"
 
 int main (void)
 {
@@ -26,4 +27,10 @@ int main (void)
     container_t data = decompressionFactory(result);
 
     printf("Après extraction on a comme valeur :\npour la température : %d\npour le niveau de radiation : %d\npour la batterie : %d\npour la vitesse : %d\n", data.temperature, data.radiation, data.battery, data.speed * 10);
+
+    packet_t packet = serialize(result);
+    printf("Packet serialized\n");
+    result = deserialize(packet);
+    printf("Deserialize done : ");
+    print_bits(result, 32);
 }

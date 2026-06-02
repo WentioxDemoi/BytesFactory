@@ -1,208 +1,241 @@
 # BytesFactory
-The purpose of this simple &amp; little project is to master byte manipulation allowing us to optimize RAM usage. The use of this technique is quit common in constrained environments.
 
+## Overview
 
---------------------- Scenario ChatGTP ---------------------
+The purpose of this project is to learn low-level memory manipulation through practical exercises involving:
 
+- bitwise operations,
+- binary representation,
+- bit packing,
+- binary serialization,
+- checksum generation,
+- error detection.
 
-Satellite BlackBox
+These techniques are commonly used in:
 
-Overview
+- embedded systems,
+- network protocols,
+- game engines,
+- IoT devices,
+- space and aerospace software.
 
-The goal of this project is to explore low-level programming through byte and bit manipulation techniques commonly used in embedded and constrained environments.
+---
 
-In this scenario, you are developing the onboard communication system of a small space probe called Astra-9.
-The probe is orbiting an icy moon near Jupiter and must operate with extremely limited resources:
+# Scenario
 
-* very small RAM capacity,
-* restricted bandwidth,
-* unstable signal transmission caused by cosmic radiation.
+You are developing the communication system of a small space probe called Astra-9.
 
-Because every transmitted byte consumes valuable energy, the system must optimize memory usage and data transmission as efficiently as possible.
+The probe operates under severe constraints:
 
-This project focuses on:
+- limited RAM,
+- restricted communication bandwidth,
+- unstable transmissions caused by cosmic radiation.
 
-* bitwise operations,
-* binary data representation,
-* data packing,
-* memory optimization,
-* binary serialization,
-* checksum generation and validation.
+To reduce memory consumption and transmission costs, telemetry data must be represented and transmitted using compact binary formats.
 
-⸻
+---
 
-Objectives
+# Project Goals
 
-Through this project, you will learn how to:
+The project is divided into several independent missions.
 
-* manipulate bits and bytes,
-* pack multiple values into a single byte,
-* optimize RAM usage,
-* serialize binary data,
-* detect transmission errors,
-* design lightweight communication protocols.
+Each mission introduces a different concept used in low-level programming.
 
-⸻
+---
 
-Features
+# Mission 1 — System Flags
 
-1. System Flags
+The spacecraft stores multiple system states inside a single byte.
 
-The spacecraft status is stored inside a single byte using bit flags.
+Each bit represents one status flag.
 
-Each bit represents a system state:
-
-Bit	Description
-0	Engine status
-1	Shield status
-2	Antenna status
-3	Emergency mode
-4-7	Reserved
+| Bit | Description |
+|------|------------|
+| 0 | Engine enabled |
+| 1 | Shield enabled |
+| 2 | Antenna enabled |
+| 3 | Emergency mode |
+| 4-7 | Reserved |
 
 Example:
 
-flags |= (1 << 2);
+c flags |= (1 << 2); 
 
-⸻
+Expected features:
 
-2. Telemetry Compression
+- enable a flag,
+- disable a flag,
+- check if a flag is enabled.
 
-Telemetry data must be compressed into as few bytes as possible.
+Suggested API:
 
-The system stores:
+c void enable_flag(uint8_t* flags, int bit); void disable_flag(uint8_t* flags, int bit); bool is_flag_enabled(uint8_t flags, int bit); 
 
-* temperature, // Plage entre -40 et +70 on va dire. 7 bits
-* radiation level, // Entre 0 et 16. 5 bits
-* battery percentage, // Entre 0 et 100. 7 bits
-* actual speed, // Entre 0 et 1 400 (en orbite MEO) en pas de 10 km/h. 11 bits
+---
 
-inside compact binary packets using manual bit packing techniques.
-Total necessary bits : 30.
+# Mission 2 — Telemetry Bit Packing
 
-⸻
+Telemetry values must be compressed into a single 32-bit integer.
 
-3. Binary Packet Transmission
+Available telemetry:
 
-The probe communicates with Earth using lightweight binary packets.
+| Field | Range | Required bits |
+|---------|---------|---------|
+| Temperature | 0 → 127 | 7 |
+| Radiation | 0 → 31 | 5 |
+| Battery | 0 → 100 | 7 |
+| Speed | 0 → 1400 | 11 |
 
-Example packet structure:
+Total:
 
-Byte	Content
-0	Temperature
-1	Radiation
-2	Battery
-3	System flags
-4	Checksum
+text 7 + 5 + 7 + 11 = 30 bits 
 
-⸻
+All values must therefore fit inside a single:
 
-4. Error Detection
+c uint32_t 
 
-Cosmic radiation may corrupt transmitted data.
+Example layout:
 
-To ensure packet integrity, the system implements a checksum validation mechanism.
+text 31                             0
++--+-----------+-------+-----+-------+ 
+|00|   Speed   |Battery| Rad | Temp  | 
++--+-----------+-------+-----+-------+    
+    11 bits     7 bits 5 bits 7 bits 
+
+Expected features:
+
+c uint32_t packTelemetry(...); Telemetry unpackTelemetry(uint32_t packed); 
+
+Goal:
+
+- learn bit masks,
+- learn bit shifts,
+- optimize memory usage.
+
+---
+
+# Mission 3 — Binary Packet Serialization
+
+Once telemetry has been packed into a 32-bit value, it must be prepared for transmission.
+
+The packed integer is split into four bytes.
 
 Example:
 
-checksum = b0 ^ b1 ^ b2 ^ b3;
+text uint32_t packedTelemetry
+         ↓ 
++------+------+------+------+ 
+| B0   | B1   | B2   | B3   | 
++------+------+------+------+ 
 
-⸻
+Packet format:
 
-Missions
+c typedef struct {     
+    uint8_t data[4];     
+    uint8_t checksum; 
+} Packet; 
 
-Mission 1 — Flag Management
+Expected features:
 
-Implement a system capable of:
+c Packet serialize(uint32_t packed); uint32_t deserialize(const Packet* packet); 
 
-* enabling flags,
-* disabling flags,
-* checking flag states.
+Goal:
 
-Suggested functions:
+- convert binary data into a transmissible format,
+- understand serialization.
 
-void enable_flag(uint8_t* flags, int bit);
-void disable_flag(uint8_t* flags, int bit);
-bool is_flag_enabled(uint8_t flags, int bit);
+---
 
-⸻
+# Mission 4 — Error Detection
 
-Mission 2 — Data Packing
+Communication may be corrupted by cosmic radiation.
 
-Store multiple telemetry values inside only a few bytes by manually packing bits.
+Each packet therefore contains a checksum.
 
-Example constraints:
+Example checksum:
 
-* temperature: 0 → 127
-* radiation: 0 → 15
-* battery: 0 → 100
+c checksum =     data[0] ^     data[1] ^     data[2] ^     data[3]; 
 
-⸻
+Expected features:
 
-Mission 3 — Packet Serialization
+c uint8_t computeChecksum(const Packet* packet); bool validatePacket(const Packet* packet); 
 
-Create and validate binary packets.
+Goal:
 
-Suggested structure:
+- detect transmission errors,
+- validate received packets.
 
-typedef struct
-{
-    uint8_t data[4];
-    uint8_t checksum;
-} Packet;
+---
 
-⸻
+# Mission 5 — Emergency Mode
 
-Mission 4 — Emergency Mode
+The spacecraft must automatically enter emergency mode when operating conditions become unsafe.
 
-If:
+Example rules:
 
-* battery level becomes critical,
-* radiation exceeds a safe threshold,
+- battery level below 15%,
+- radiation level above a predefined threshold.
 
-the spacecraft automatically switches to emergency mode and reduces its activity to preserve energy.
+Expected behavior:
 
-⸻
+text Low battery         OR High radiation         ↓ Enable emergency flag 
 
-Advanced Challenges
+Goal:
 
-Binary Logging
+- combine previous modules,
+- manipulate flags automatically.
 
-Create compact binary logs such as:
+---
 
-00101101 11100010
+# Advanced Challenges
 
-Run-Length Encoding (RLE)
+## Binary Logging
 
-Implement a simple compression algorithm:
+Store telemetry using compact binary logs.
 
+Example:
+
+text 00101101 11100010 
+
+---
+
+## Run-Length Encoding (RLE)
+
+Implement a simple compression algorithm.
+
+Example:
+
+text 
 AAAAABBBCC
-↓
-5A3B2C
+↓ 
+5A3B2C 
 
-Custom Space Protocol
+---
 
-Design a minimal binary communication protocol:
+## Custom Space Protocol
 
-[HEADER][DATA][CHECKSUM][END]
+Design your own protocol.
 
-⸻
+Example:
 
-Recommended Languages
+text [HEADER][DATA][CHECKSUM][END] 
 
-Recommended:
+Possible additions:
 
-* C
-* C++
-* Rust
+- packet type,
+- protocol version,
+- sequence number,
+- acknowledgment system.
 
-⸻
+---
 
-Learning Outcomes
+# Learning Outcomes
 
-By completing this project, you will gain a deeper understanding of:
+By completing this project you will gain experience with:
 
-* low-level memory representation,
-* embedded systems programming,
-* binary communication protocols,
-* RAM optimization techniques,
-* real-world bit manipulation strategies used in systems programming and game/network engines.
+- bitwise operations,
+- memory optimization,
+- binary serialization,
+- communication protocols,
+- checksum validation,
+- embedded programming concepts.
